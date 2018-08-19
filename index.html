@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>목동병원</title>
+    <link rel="stylesheet"  href="assets/css/main.css" />
+  </head>
+  
+  <body>
+    <div class="container-md">
+
+      <div class="popup" id="popup" style="display:none;">
+        <div class="popBg">
+          <div class="popCon">
+  채혈실 안에서 대기하세요.<br />
+  번호가 호출되면 채혈하세요.
+          </div>
+        </div>
+      </div>
+  
+      <div class="md-header">
+        <div class="md-title">
+          <img src="assets/img/logo.png" />
+        </div>
+        <div class="md-stat">
+          <div class="md-standbyBlood">
+            채혈실 대기자 <span>25</span> 명
+          </div>
+          <div class="md-standbyOrder">
+            접수대 대기자 <span>21</span> 명
+          </div>
+        </div>
+        <div class="md-info">
+          번호표를 뽑으시려면 아래 중 선택하세요.
+        </div>
+      </div>
+      <div class="md-body">
+        <div class="mdBody-conArea">
+          <div class="mdBody-conAreaInner">
+            <div class="mdBody-textField">
+              <input type="text" id="numInfo" />
+              <h4><strong>주민번호</strong> 또는 <strong>등록번호</strong> 입력</h4>
+              <p>
+                등록번호(8자리), 또는 주민번호(13자리)<br /> 입력 후 <span class="tColRed">확인버튼</span>을 눌러주세요.
+              </p>
+            </div>
+            <div class="mdBody-btns">
+              <div class="btnGroup">
+                <ul>
+                  <li>
+                    <button type="button" class="dial" data-number="1" id="one">
+                      1</button>
+                  </li>
+                  <li>
+                    <button type="button" class="dial" data-number="2" id="two">
+                      2</button>
+                  </li>
+                  <li>
+                    <button type="button" class="dial" data-number="3" id="three">
+                      3</button>
+                  </li>
+                  <li>
+                    <button type="button" class="dial" data-number="4" id="for">
+                      4</button>
+                  </li>
+                  <li>
+                    <button type="button" class="dial" data-number="5" id="five">
+                      5</button>
+                  </li>
+                  <li>
+                    <button type="button" class="dial" data-number="6" id="six">
+                      6</button>
+                  </li>
+                  <li>
+                    <button type="button" class="dial" data-number="7" id="seven">
+                      7</button>
+                  </li>
+                  <li>
+                    <button type="button" class="dial" data-number="8" id="eight">
+                      8</button>
+                  </li>
+                  <li>
+                    <button type="button" class="dial" data-number="9" id="nine">
+                      9</button>
+                  </li>
+                  <li>
+                    <button type="button" class="dial btn-remove" id="btnClear">
+                      정정</button>
+                  </li>
+                  <li>
+                    <button type="button" class="dial" data-number="0" id="ero">
+                      0</button>
+                  </li>
+                  <li>
+                    <button type="button" class="dial btn-ok" id="btnConfirm">
+                      확인</button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="md-ft">
+        <div class="mdFt-conArea">
+          <div class="mdFt-conAreaInner">
+            <div class="mdFt-Title">
+              등록번호 바코드 스캔
+              <p>
+                진료카드 또는 영수증 바코드 가능
+              </p>
+            </div>
+            <div class="mdFt-img">
+              <img src="assets/img/ft-img.png" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+   
+
+    <script>
+      // You can also require other files to run in this process
+      require('./renderer.js')
+    </script>
+  </body>
+</html>
