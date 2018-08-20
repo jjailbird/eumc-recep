@@ -6,13 +6,15 @@ const dials = document.querySelectorAll('button[data-number]')
 const numInfo = document.getElementById('numInfo')
 const btnClear = document.getElementById('btnClear')
 const btnConfirm = document.getElementById('btnConfirm')
+const popup = document.getElementById('popup')
+const portSelector = document.getElementById('port_selector')
 
 let scanPort = 'COM4'
-let printerPort = 'COM3'
 
 Array.from(dials).forEach(dial => {
   dial.addEventListener('click', function(event) {
     numInfo.value += this.dataset.number
+    console.log('dial')
   })
 })
 
@@ -23,6 +25,11 @@ btnClear.addEventListener('click', function(event) {
     numInfo.value = number_string.slice(0, -1)
     console.log(number_string)
   }
+  portSelector.style.display = 'block'
+})
+
+popup.addEventListener('click', function(event) {
+  popup.style.display = 'none'
 })
 
 // Importing this adds a right-click menu with 'Inspect Element' option -------------------------
@@ -82,6 +89,8 @@ btnConfirm.addEventListener('click', function(event) {
   // printer.write('한글 테스트 한글 테스트' + ascii.LF)
   printer.setFontAlign(1)
   printer.println('PRINT TEST !!!')
+  popup.style.display = 'block'
+
   
 })
 // -----------------------------------------------------------------------------------------------
