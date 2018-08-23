@@ -7,6 +7,7 @@ const test_url2 = 'http://devensysinf.eumc.ac.kr/MS/LM/LMWebService.asmx?wsdl'
 const test_url3 = 'http://www.holidaywebservice.com//HolidayService_v2/HolidayService2.asmx?wsdl'
 
 const xConvert = require('xml-js');
+const printer = require('../thermal-printer/printer')
 
 const txtWaitingNumbers = document.getElementById('txtWaitingNumbers')
 const popup = document.getElementById('popup') 
@@ -132,6 +133,15 @@ function setWaitingNumber(sNumber) {
             const xxData = xData.NewDataSet.Table
             // console.log('xxData', xxData)
             console.log('setWaitingNumber',xxData.Return.Value._text)
+            printer.setFontAlign(1)
+            printer.println('\n')
+            printer.println('*******************************')
+
+            printer.println(util.format('Waiting Number: %s', xxData.Return.Value._text))
+
+            printer.println('*******************************')
+            printer.println('\n')
+            printer.PartialCut()
        
           }
         }

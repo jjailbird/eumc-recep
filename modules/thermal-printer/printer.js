@@ -76,6 +76,16 @@ module.exports = {
     buffer = null
     append(new Buffer([0x1a, 0x78, iMode]))
     thermalPrinter.write(buffer)
+  },
+  PartialCut:() => {
+    buffer = null
+    append(new Buffer([0x1b, 0x69]))
+    thermalPrinter.write(buffer)
+  },
+  Fullcut:() => {
+    buffer = null
+    append(new Buffer([0x1b, 0x6d]))
+    thermalPrinter.write(buffer)
   }
   
 

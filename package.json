@@ -1,5 +1,5 @@
 {
-  "name": "electron-quick-start",
+  "name": "eumc-recep",
   "version": "1.0.0",
   "description": "A minimal Electron application",
   "main": "main.js",
@@ -9,7 +9,7 @@
     "test": "mocha && standard",
     "package": "npm-run-all package:*",
     "package:mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --out=out --icon=assets/app-icon/mac/app.icns --osx-sign.identity='Developer ID Application: GitHub' --extend-info=assets/mac/info.plist",
-    "package:win": "electron-packager . --overwrite --platform=win32 --arch=ia32 --out=out --icon=assets/app-icon/win/app.ico",
+    "package:win": "electron-packager . eumc-recep --overwrite --platform=win32 --arch=x64 --out=out",
     "package:linux": "electron-packager . --overwrite --platform=linux --arch=x64 --out=out",
     "package:sign-exe": "signcode './out/Electron API Demos-win32-ia32/Electron API Demos.exe' --cert ~/electron-api-demos.p12 --prompt --name 'Electron API Demos' --url 'http://electron.atom.io'",
     "package:installer": "node ./script/installer.js",
@@ -32,6 +32,7 @@
   "author": "GitHub",
   "license": "CC0-1.0",
   "devDependencies": {
+    "asar": "^0.14.3",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "devtron": "^1.4.0",

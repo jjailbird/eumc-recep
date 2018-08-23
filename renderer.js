@@ -31,7 +31,7 @@ btnClear.addEventListener('click', function(event) {
     numInfo.value = number_string.slice(0, -1)
     console.log(number_string)
   }
-  portSelector.style.display = 'block'
+  // portSelector.style.display = 'block'
 })
 
 popup.addEventListener('click', function(event) {
@@ -101,6 +101,8 @@ btnConfirm.addEventListener('click', function(event) {
   let sText = "프린트 한글"
   console.log('text', toHex(sText))
   */
+  
+
 })
 
 
