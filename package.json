@@ -52,6 +52,7 @@
     "serialport": "^6.2.2",
     "soap": "^0.24.0",
     "unorm": "^1.4.1",
-    "write-file-queue": "0.0.1"
+    "write-file-queue": "0.0.1",
+    "xml-js": "^1.6.7"
   }
 }
