@@ -11,6 +11,9 @@ const portSelector = document.getElementById('port_selector')
 
 let scanPort = 'COM4'
 
+// window.$ = window.jQuery = require('jquery')
+// window.Bootstrap = require('bootstrap')
+
 Array.from(dials).forEach(dial => {
   dial.addEventListener('click', function(event) {
     numInfo.value += this.dataset.number
@@ -80,33 +83,28 @@ function readScanData(data) {
 let buffer = null
 
 btnConfirm.addEventListener('click', function(event) {
-  // alert('print!!!')
   
-  //printer.write(ascii.ESC + 'a' + 1)
-  //console.log(ascii.ESC + 'a' + 1)
-  // printer.write('PRINT!!!' + ascii.LF)
-  // printer.write(Buffer.concat(['PRINTTTTTTTT!!!',ascii.LF]))
-  // printer.write('í•œê¸€ í…ŒìŠ¤íŠ¸ í•œê¸€ í…ŒìŠ¤íŠ¸' + ascii.LF)
+  
   printer.setFontAlign(1)
-  printer.println('PRINT TEST !!!')
-  popup.style.display = 'block'
-
+  printer.println('PRINT')
+  printer.setFontAlign(2)
+  printer.println('PRINT RIHGT')
+  printer.setFontAlign(0)
+  printer.setExtendMode(0)
+  printer.println(toHex("ÇÁ¸°Æ® ÇÑ±Û ÇÁ¸°Æ®"))
+  
+  let sText = "ÇÁ¸°Æ® ÇÑ±Û"
+  console.log('text', toHex(sText))
   
 })
-// -----------------------------------------------------------------------------------------------
 
 
-// Thermal Printer -------------------------------------------------------------------------------
-/*
-const thermalPrinter = require('./modules/node-thermal-printer')
+function toHex(str) {
+	var hex = '';
+	for(var i=0;i<str.length;i++) {
+		hex += ''+str.charCodeAt(i);
+	}
+	return hex;
+}
 
-thermalPrinter.init({
-  type: 'epson',
-  interface: 'COM3'
-})
-btnConfirm.addEventListener('click', function(event) {
-  alert('print!!!')
-  thermalPrinter.println('PRINT!!!')
-})
-*/
 // -----------------------------------------------------------------------------------------------

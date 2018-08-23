@@ -14,7 +14,7 @@ const characterSet = {
   Latin_America: 12, 
   Korea: 13
 }
-const thermalPrinterPort = 'COM3' 
+const thermalPrinterPort = 'COM5' 
 const SerialPort = require('serialport')
 const thermalPrinter = new SerialPort(thermalPrinterPort, {
   baudRate: 19200
@@ -56,12 +56,25 @@ module.exports = {
     buffer = null
   },
   characterSet: characterSet,
-  setCharacterSet: (characterSet) => {
-    
+  setCharacterSet: (charSet) => {
+    buffer = null
+    // string sCommand = AsciiCode.ESC + (char)'R' + (int)iso;
+    console.log('charset', charSet)
+    // append(new Buffer([ascii.ESC,'R'.charCodeAt(0), charSet]))
+    append(new Buffer([0x1b, 0x52, charSet]))
+    thermalPrinter.write(buffer)
+
   },
   setFontAlign: (iAlign) => {
     buffer = null
-    append(ascii.TXT_ALIGN_CT)
+    // append(ascii.TXT_ALIGN_CT)
+    // append(new Buffer([ascii.ESC, 'a'.charCodeAt(0), Number(iAlign)]))
+    append(new Buffer([0x1b, 0x61, iAlign]))
+    thermalPrinter.write(buffer)
+  },
+  setExtendMode: (iMode) => {
+    buffer = null
+    append(new Buffer([0x1a, 0x78, iMode]))
     thermalPrinter.write(buffer)
   }
   
