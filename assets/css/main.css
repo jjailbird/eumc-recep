@@ -140,7 +140,7 @@ background: linear-gradient(#dddddd, #fafafa);
 .mdBody-btns .btnGroup ul li button.btn-remove:active{
   background: linear-gradient(#4a4a4a, #727272);
 }
-.mdBody-btns .btnGroup ul li button.btn-ok{
+.mdBody-btns .btnGroup ul li button.btn-ok, button.btn-ok{
   border:none;
   font-size:30px;
   font-weight:bold;
@@ -148,7 +148,7 @@ background: linear-gradient(#dddddd, #fafafa);
   line-height: 60px;
   background: linear-gradient(#fd5555, #dc2a2a);
 }
-.mdBody-btns .btnGroup ul li button.btn-ok:active{
+.mdBody-btns .btnGroup ul li button.btn-ok:active, button.btn-ok:active{
   background: linear-gradient(#dc2a2a, #fd5555);
 }
 

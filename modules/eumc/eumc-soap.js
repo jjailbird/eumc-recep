@@ -8,11 +8,181 @@ const test_url3 = 'http://www.holidaywebservice.com//HolidayService_v2/HolidaySe
 
 const xConvert = require('xml-js');
 
+const txtWaitingNumbers = document.getElementById('txtWaitingNumbers')
+const popup = document.getElementById('popup') 
+const popup_content = document.getElementById('popup_content')
+
+function changeWaitingNumbers(sNumber) {
+  console.log('change', sNumber)
+  txtWaitingNumbers.innerText = sNumber
+}
+
+function getReservationInfo(sNumber) {
+  
+  if (sNumber && (sNumber.length == 8)) {
+    let popup_message = ""
+    let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_BLCL_KIOSK_SELECT]]> </QID><QTYPE> <![CDATA[Package]]> </QTYPE><USERID> <![CDATA[RTE]]>  </USERID>  <EXECTYPE>  <![CDATA[FILL]]>  </EXECTYPE>   <P0>  <![CDATA[02]]>  </P0>  <P1>  <![CDATA[%s]]>  </P1></Table>"
+    let sParam = ""
+    let pn = sNumber
+    sParam = util.format(sQuery, pn)
+
+    soap.createClient(test_url2, function(err, client) {
+      const args = {
+        sGubun: 'GETQUERY',
+        sParam: sParam
+      }
+      
+      client.LMService(args, function(err, result) {
+        if(result.LMServiceResult) {
+          const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
+          console.log(xData)
+          if (xData.NewDataSet.Table) {
+            const xxData = xData.NewDataSet.Table
+            
+            let itemCount = Array.isArray(xxData) ? xxData.length : 1
+            let bAcceptFull = true
+            
+            console.log('itemCount',itemCount)
+            let cData = null
+            if (Array.isArray(xxData)) {
+
+              for(let i = 0;i<xxData.length; i++) {
+                // console.log(i, xxData[i])
+                cData = xxData[i]
+  
+                if (cData.RPY_STS_CD._text == 'N') {
+                  bAcceptFull = false
+                  break
+                }
+              }
+  
+            } 
+            else {
+              cData = xxData
+              if (cData.RPY_STS_CD._text == 'N') {
+                bAcceptFull = false
+              }
+        
+            }
+            
+            if (itemCount == 0) {
+              popup_message = "예정된 진료가 없습니다."
+            } 
+            else if (itemCount == 1 && bAcceptFull == true) {
+              setAutoBloodCollection(cData.PT_NO._text, cData.EXM_HOPE_DT._text)
+              popup_message = "채혈실 안에서 대기하세요.<br/> 번호가 호출되면 채혈하세요."
+            }
+            else {
+              if (bAcceptFull == false) {
+                popup_message = "수납 후 접수대로 오세요."
+                for(let i = 0;i<xxData.length; i++) {
+                  const cData = xxData[i]
+    
+                  if (cData.RPY_STS_CD._text == 'N') {
+                    let popup_message_ = "환자명:%s<br/>진료과명:%s<br/>진료희망일자:%s<br/>수납 후 접수대로 오세요." 
+                    popup_message = util.format(popup_message_, cData.PT_NM._text, cData.DEPT_NM._text, cData.EXM_HOPE_DT._text)
+                    break
+                  }
+                }
+              }  
+              else {
+                popup_message = "대기하세요 번호가 호출됩니다."
+              }
+              setWaitingNumber(sNumber)
+            }
+
+            if (popup_message != "") {
+              popup_content.innerHTML = popup_message
+              popup.style.direction = 'block'
+            }
+
+          }
+        }
+      })
+      
+    })
+  }
+  else {
+    console.log('err','올바른 조회 번호를 입력하시오')      
+  }
+
+}
+
+function setWaitingNumber(sNumber) {
+    
+  if (sNumber && (sNumber.length == 8)) {
+    let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_INS_KIOSK_WAITNO]]> </QID><QTYPE> <![CDATA[Package]]> </QTYPE><USERID> <![CDATA[RTE]]>  </USERID>  <EXECTYPE>  <![CDATA[FILL]]>  </EXECTYPE>   <P0>  <![CDATA[02]]>  </P0>  <P1>  <![CDATA[%s]]>  </P1></Table>"
+    let sParam = ""
+    let pn = sNumber
+    sParam = util.format(sQuery, pn)
+
+    console.log('sParam', sParam)
+    
+    soap.createClient(test_url2, function(err, client) {
+      const args = {
+        sGubun: 'SETQUERY',
+        sParam: sParam
+      }
+     
+      client.LMService(args, function(err, result) {
+        if(result.LMServiceResult) {
+          const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
+          // console.log('xData', xData)
+          if(xData.NewDataSet.Table) {
+            const xxData = xData.NewDataSet.Table
+            // console.log('xxData', xxData)
+            console.log('setWaitingNumber',xxData.Return.Value._text)
+       
+          }
+        }
+      })
+      
+    })
+  }
+  else {
+    console.log('err','올바른 조회 번호를 입력하시오')      
+  }
+}
+
+function setAutoBloodCollection(sNumber, sHopeDate) {
+    
+  if (sNumber && (sNumber.length == 8) && sHopeDate) {
+    let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_INS_KIOSK_ACCEPT]]></QID><QTYPE><![CDATA[Package]]></QTYPE><USERID><![CDATA[RTE]]></USERID><EXECTYPE><![CDATA[FILL]]></EXECTYPE><P0><![CDATA[02]]></P0><P1><![CDATA[%s]]></P1><P2><![CDATA[%s]]></P2></Table>"
+    let sParam = ""
+    let pn = sNumber
+
+    sParam = util.format(sQuery, pn, sHopeDate)
+
+    soap.createClient(test_url2, function(err, client) {
+      const args = {
+        sGubun: 'SETQUERY',
+        sParam: sParam
+      }
+ 
+      client.LMService(args, function(err, result) {
+        if(result.LMServiceResult) {
+          const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
+          if(xData.NewDataSet.Table) {
+            const xxData = xData.NewDataSet.Table
+            console.log('setAutoBloodCollection',xxData.Return.Value._text)
+
+          }
+        }
+      })
+      
+    })
+  }
+  else {
+    console.log('err','올바른 조회 번호를 입력하시오')      
+  }
+
+}
+
+
+
 module.exports = {
   getPatientInfo:(sNumber) => {
     
-    // let checkString = util.format("주민번호:%s, 환자번호:%s",ssn, pn)
-    // pn : 11377964, ssn: 1903061042114
     if (sNumber && (sNumber.length == 8 || sNumber.length == 13)) {
       let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_PAT_KIOSK_SELECT]]> </QID><QTYPE> <![CDATA[Package]]> </QTYPE><USERID> <![CDATA[RTE]]>  </USERID>  <EXECTYPE>  <![CDATA[FILL]]>  </EXECTYPE>   <P0>  <![CDATA[02]]>  </P0>  <P1>  <![CDATA[%s]]>  </P1>  <P2> <![CDATA[%s]]>  </P2>  <P3> <![CDATA[%s]]> </P3></Table>"
       let sParam = ""
@@ -33,25 +203,24 @@ module.exports = {
 
       }
       sParam = util.format(sQuery, sChecker, pn, ssn)
-
-      console.log('sParam', sParam)
-      
       soap.createClient(test_url2, function(err, client) {
         const args = {
           sGubun: 'GETQUERY',
           sParam: sParam
         }
         
-        // console.log('client', client)
-        
         client.LMService(args, function(err, result) {
           if(result.LMServiceResult) {
             const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
-            console.log('result.LMServiceResult', result.LMServiceResult)
-            console.log('xdata', xData)
             if(xData.NewDataSet.Table) {
               const xxData = xData.NewDataSet.Table
-              console.log('dae', xxData.PT_BRDY_DT._text)
+              const patientInfoHtml_ = '이름:%s<br/>성별:%s<br/>생년월일:%s<br/><button type="button" class="dial btn-ok">확인</button>'
+              const patientInfoHtml = util.format(patientInfoHtml_ ,xxData.PT_NM._text, xxData.SEX_TP_NM._text, xxData.PT_BRDY_DT._text)
+              popup_content.innerHTML = patientInfoHtml
+              popup.style.display = 'block'
+
+              // 확인 버튼 클릭
+              getReservationInfo(xxData.PT_NO._text)
 
             }
           }
@@ -62,7 +231,34 @@ module.exports = {
     else {
       console.log('err','올바른 조회 번호를 입력하시오')      
     }
+  },
+  getWaitingNumbers: () => {
+    
+      let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_KIOSK_TOTALWAIT_SELECT]]> </QID><QTYPE><![CDATA[Package]]></QTYPE><USERID><![CDATA[RTE]]></USERID><EXECTYPE><![CDATA[FILL]]></EXECTYPE><P0><![CDATA[02]]></P0></Table>"
+      let sParam = sQuery
+      soap.createClient(test_url2, function(err, client) {
+        const args = {
+          sGubun: 'GETQUERY',
+          sParam: sParam
+        }
+      
+        client.LMService(args, function(err, result) {
+          if(result.LMServiceResult) {
+            const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
+            console.log('xData', xData)
+            if(xData.NewDataSet.Table) {
+              const xxData = xData.NewDataSet.Table
+              // console.log('xxData', xxData)
+              console.log('getWaitingNumbers',xxData.CNT._text)
+              changeWaitingNumbers(xxData.CNT._text)
+            }
+          }
+        })
+        
+      })
+        
   }
+  
 }
 
 

@@ -8,8 +8,9 @@ const btnClear = document.getElementById('btnClear')
 const btnConfirm = document.getElementById('btnConfirm')
 const popup = document.getElementById('popup')
 const portSelector = document.getElementById('port_selector')
-const eumc_soap = require('./modules/eumc/eumc-soap')
 
+
+const eumc_soap = require('./modules/eumc/eumc-soap')
 
 let scanPort = 'COM4'
 
@@ -85,7 +86,9 @@ function readScanData(data) {
 let buffer = null
 
 btnConfirm.addEventListener('click', function(event) {
+  // popup.style.display = 'block'
   eumc_soap.getPatientInfo(numInfo.value)
+  eumc_soap.getWaitingNumbers();
   /*
   printer.setFontAlign(1)
   printer.println('PRINT')
