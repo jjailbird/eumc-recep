@@ -133,15 +133,8 @@ function setWaitingNumber(sNumber) {
             const xxData = xData.NewDataSet.Table
             // console.log('xxData', xxData)
             console.log('setWaitingNumber',xxData.Return.Value._text)
-            printer.setFontAlign(1)
-            printer.println('\n')
-            printer.println('*******************************')
-
-            printer.println(util.format('Waiting Number: %s', xxData.Return.Value._text))
-
-            printer.println('*******************************')
-            printer.println('\n')
-            printer.PartialCut()
+            
+            printWaitingNumber(xxData.Return.Value._text)
        
           }
         }
@@ -188,7 +181,17 @@ function setAutoBloodCollection(sNumber, sHopeDate) {
 
 }
 
+function printWaitingNumber(sNumber) {
+  printer.setFontAlign(1)
+  printer.println('\n')
+  printer.println('*******************************')
 
+  printer.println(util.format('Waiting Number: %s', sNumber))
+
+  printer.println('*******************************')
+  printer.println('\n')
+  printer.PartialCut()
+}
 
 module.exports = {
   getPatientInfo:(sNumber) => {

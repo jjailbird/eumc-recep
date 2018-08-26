@@ -20,6 +20,11 @@ const thermalPrinter = new SerialPort(thermalPrinterPort, {
   baudRate: 19200
 })
 
+const parser = new Readline();
+thermalPrinter.pipe(parser);
+parser.on('data', console.log);
+
+
 let buffer = null
 // ------------------------------ Append ------------------------------
 let append = function(buff){
@@ -77,6 +82,16 @@ module.exports = {
     append(new Buffer([0x1a, 0x78, iMode]))
     thermalPrinter.write(buffer)
   },
+  set2ByteModeEnable: () => {
+    buffer = null
+    append(new Buffer([0x1c, 0x26]))
+    thermalPrinter.write(buffer)
+  },
+  set2ByteModeDisable: () => {
+    buffer = null
+    append(new Buffer([0x1c, 0x2e]))
+    thermalPrinter.write(buffer)
+  },  
   PartialCut:() => {
     buffer = null
     append(new Buffer([0x1b, 0x69]))
