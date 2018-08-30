@@ -20,20 +20,53 @@ const thermalPrinter = new SerialPort(thermalPrinterPort, {
   baudRate: 19200
 })
 
-const parser = new Readline();
-thermalPrinter.pipe(parser);
-parser.on('data', console.log);
+const Iconv = require('iconv').Iconv
+const jschardet = require('jschardet');
 
+/*
+console.log('thermalPrinter.isOpen', thermalPrinter.isOpen)
+
+if (thermalPrinter.isOpen) {
+  const parser = new Readline();
+  thermalPrinter.pipe(parser);
+  parser.on('data', console.log);
+}
+*/
 
 let buffer = null
 // ------------------------------ Append ------------------------------
 let append = function(buff){
   if(typeof buff === "string"){
+    // const sEncoding = jschardet.detect(buff)
+    // console.log(buff, sEncoding)
+    
+
+    let endBuff = null;
+    for(var i=0; i<buff.length; i++) {
+      const value = buff[i];
+      // const tempBuff = new Buffer(value);
+      const tempBuff = Buffer.from(value)
+      
+
+      if (endBuff) endBuff = Buffer.concat([endBuff, tempBuff]);
+      else endBuff = tempBuff;
+    }
+
+    buff = endBuff;
+  }  
+  /*
+  if(typeof buff === "string"){
 
     let endBuff = null
-    for(let i=0; i<buff.length; i++) {
-      let value = buff[i]
-      let tempBuff = new Buffer(value)
+    // let utf8 = unescape(encodeURIComponent(buff))
+    let utf8 = buff
+
+    for(let i=0; i<utf8.length; i++) {
+      // let value = utf8.charCodeAt(i).toString(16)
+      // let tempBuff = new Buffer(value, 'ascii')
+      // console.log(utf8[i], value)
+      // let tempBuff = Buffer.from(value, 'hex')
+      console.log('append', tempBuff)
 
       if (endBuff) endBuff = Buffer.concat([endBuff, tempBuff])
       else endBuff = tempBuff
@@ -41,6 +74,7 @@ let append = function(buff){
 
     buff = endBuff
   }
+  */
 
   // Append new buffer
   if (buffer) {
@@ -51,13 +85,16 @@ let append = function(buff){
 }
 
 const ascii = require('./ascii.buff')
+const iconv = new Iconv('ASCII', 'CP949');
 
 module.exports = {
   println: (text) => {
-    append(text.toString())
-    // append("\n")
-    append(ascii.LF)
-    thermalPrinter.write(buffer)
+    if (text) {
+      // console.log(text, jschardet.detect(text))
+      append(text.toString())
+      append(ascii.LF)
+      thermalPrinter.write(buffer)
+    }
     buffer = null
   },
   characterSet: characterSet,
@@ -92,16 +129,15 @@ module.exports = {
     append(new Buffer([0x1c, 0x2e]))
     thermalPrinter.write(buffer)
   },  
-  PartialCut:() => {
+  partialCut:() => {
     buffer = null
     append(new Buffer([0x1b, 0x69]))
     thermalPrinter.write(buffer)
   },
-  Fullcut:() => {
+  fullcut:() => {
     buffer = null
     append(new Buffer([0x1b, 0x6d]))
     thermalPrinter.write(buffer)
   }
   
-
 }

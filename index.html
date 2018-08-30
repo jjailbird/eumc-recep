@@ -7,6 +7,32 @@
   </head>
   
   <body>
+    <div class="dialog-ovelay" id="popup_confirm" style="display:none">
+      <div class="dialog">
+        <header> <h3 id="confirm_title">Patient Number</h3> <i class="fa fa-close"></i></header>
+        <div class="dialog-msg">
+          <p id="confirm_content"> Contents </p>
+        </div>
+        <footer>
+          <div class="controls"> 
+            <table style="width: 100%">
+              <tr>
+                <td style="text-align:left">
+                  <button id="btn_confirm_cancel" class="button button-default cancelAction">취소</button>  
+                </td>
+                <td style="text-align:right">
+                  <button id="btn_confirm_ok" class="button button-danger doAction">확인</button>
+                </td>
+              </tr>
+            </table>
+            
+             
+          </div>
+        </footer>
+      </div>
+    </div>
+
+
     <div class="container-md">
 
       <div class="popup" id="popup" style="display:none;">
@@ -123,7 +149,11 @@
               </p>
             </div>
             <div class="mdFt-img">
-              <img src="assets/img/ft-img.png" />
+              <object type="application/x-shockwave-flash" width="410px" height="200px"> 
+                <param name="movie" value="assets/img/ft-img.swf"></param> 
+                <param name="wmode" value="opaque"></param> 
+              </object>
+              <!--<img src="assets/img/ft-img.png" />-->
             </div>
           </div>
         </div>

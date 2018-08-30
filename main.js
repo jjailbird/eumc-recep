@@ -13,7 +13,8 @@ function createWindow () {
     height: 600,
     fullscreen: true,
     kiosk: true,
-    autoHideMenuBar: true
+    autoHideMenuBar: true,
+    webPreferences: {plugins: true}
   }
   mainWindow = new BrowserWindow(windowOptions)
 

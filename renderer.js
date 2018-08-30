@@ -9,7 +9,6 @@ const btnConfirm = document.getElementById('btnConfirm')
 const popup = document.getElementById('popup')
 const portSelector = document.getElementById('port_selector')
 
-
 const eumc_soap = require('./modules/eumc/eumc-soap')
 
 let scanPort = 'COM4'
@@ -65,11 +64,6 @@ window.addEventListener('contextmenu', (e) => {
 const SerialPort = require('serialport')
 const Readline = SerialPort.parsers.Readline
 const scanner = new SerialPort(scanPort)
-/*
-const printer = new SerialPort(printerPort, {
-  baudRate: 19200
-})
-*/
 
 const ascii = require('./modules/thermal-printer/ascii.buff')
 const printer = require('./modules/thermal-printer/printer')
@@ -82,29 +76,14 @@ function readScanData(data) {
   numInfo.value = data
 }
 
-
 let buffer = null
 
 btnConfirm.addEventListener('click', function(event) {
   // popup.style.display = 'block'
   eumc_soap.getPatientInfo(numInfo.value)
   eumc_soap.getWaitingNumbers();
-  /*
-  printer.setFontAlign(1)
-  printer.println('PRINT')
-  printer.setFontAlign(2)
-  printer.println('PRINT RIHGT')
-  printer.setFontAlign(0)
-  printer.setExtendMode(0)
-  printer.println(toHex("프린트 한글 프린트"))
   
-  let sText = "프린트 한글"
-  console.log('text', toHex(sText))
-  */
-  
-
 })
-
 
 function toHex(str) {
 	var hex = '';
