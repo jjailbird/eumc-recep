@@ -47,6 +47,10 @@ function closeConfirmWindow() {
   popup_confirm.style.display = 'none'
 }
 
+function openPopupWindow(content) {
+  popup_content.innerHTML = content
+  popup.style.display = 'block'
+}
 
 async function sound_demo() {
   let sound_play = sound_do_apply
@@ -148,8 +152,10 @@ function getReservationInfo(sNumber) {
             }
 
             if (popup_message != "") {
-              popup_content.innerHTML = popup_message
-              popup.style.direction = 'block'
+              closeConfirmWindow()
+              openPopupWindow(popup_message)
+              // popup_content.innerHTML = popup_message
+              // popup.style.direction = 'block'
             }
             if (sound_play) {
               sound_play.start()
@@ -299,6 +305,12 @@ function sleep(ms) {
 module.exports = {
   getPatientInfo:(sNumber) => {
     
+    // test local -----------------
+    // openConfirmWindow("TEST CONFIRM", 123445)
+    // closeConfirmWindow()
+    // openPopupWindow("PopupTEST")
+    // test local ----------------
+
     if (sNumber && (sNumber.length == 8 || sNumber.length == 13)) {
       
       let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_PAT_KIOSK_SELECT]]> </QID><QTYPE> <![CDATA[Package]]> </QTYPE><USERID> <![CDATA[RTE]]>  </USERID>  <EXECTYPE>  <![CDATA[FILL]]>  </EXECTYPE>   <P0>  <![CDATA[02]]>  </P0>  <P1>  <![CDATA[%s]]>  </P1>  <P2> <![CDATA[%s]]>  </P2>  <P3> <![CDATA[%s]]> </P3></Table>"
