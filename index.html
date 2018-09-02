@@ -8,6 +8,8 @@
   
   <body>
     <div class="dialog-ovelay" id="popup_confirm" style="display:none">
+      <input id="confirm_pno" type="text" />
+      <input id="confirm_pname" type="text" />
       <div class="dialog">
         <header> <h3 id="confirm_title">Patient Number</h3> <i class="fa fa-close"></i></header>
         <div class="dialog-msg">
@@ -146,10 +148,9 @@
               </p>
             </div>
             <div class="mdFt-img">
-              <object type="application/x-shockwave-flash" width="410px" height="200px"> 
-                <param name="movie" value="assets/img/ft-img.swf"></param> 
-                <param name="wmode" value="opaque"></param> 
-              </object>
+              <video width="410" height="200" autoplay loop>
+                <source src="./assets/video/manua.h264.mp4" type="video/mp4">
+              </video>
               <!--<img src="assets/img/ft-img.png" />-->
             </div>
           </div>

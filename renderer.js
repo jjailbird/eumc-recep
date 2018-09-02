@@ -65,8 +65,6 @@ const SerialPort = require('serialport')
 const Readline = SerialPort.parsers.Readline
 const scanner = new SerialPort(scanPort)
 
-const ascii = require('./modules/thermal-printer/ascii.buff')
-const printer = require('./modules/thermal-printer/printer')
 const parser = new Readline()
 scanner.pipe(parser)
 parser.on('data', readScanData)

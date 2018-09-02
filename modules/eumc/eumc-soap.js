@@ -8,8 +8,22 @@ const test_url2 = 'http://devensysinf.eumc.ac.kr/MS/LM/LMWebService.asmx?wsdl'
 const test_url3 = 'http://www.holidaywebservice.com//HolidayService_v2/HolidayService2.asmx?wsdl'
 
 const xConvert = require('xml-js');
-const printer = require('../thermal-printer/printer')
-const ascii = require('../thermal-printer/ascii.buff')
+// const printer = require('../thermal-printer/printer')
+// const ascii = require('../thermal-printer/ascii.buff')
+// import printer from '../thermal-printer/printer'
+
+// import * as ascii from '../thermal-printer/ascii.buff'
+
+// import SimpleWSocket from '../websocket'
+const SimpleWSocket = require('../websocket')
+
+const wsocket = new SimpleWSocket('ws://localhost:8181')
+wsocket.isreconnect = true
+wsocket.connect()
+
+wsocket.onmessage = function(message) {
+  console.log(message)
+}
 
 const txtWaitingNumbers = document.getElementById('txtWaitingNumbers')
 const popup = document.getElementById('popup') 
@@ -17,8 +31,11 @@ const popup_content = document.getElementById('popup_content')
 const popup_confirm = document.getElementById('popup_confirm')
 const confirm_content = document.getElementById('confirm_content')
 const confirm_title = document.getElementById('confirm_title')
+const confirm_pno = document.getElementById('confirm_pno')
+const confirm_pname = document.getElementById('confirm_pname')
 const btn_confirm_ok = document.getElementById('btn_confirm_ok')
 const btn_confirm_canncel = document.getElementById('btn_confirm_cancel')
+
 
 const sound_do_apply = new Sound("assets/audio/번호가 호출되면 접수하세요.mp3",100,false);
 const sound_go_reception = new Sound("assets/audio/수납 후 접수대로 오세요.mp3",100,false);
@@ -30,7 +47,6 @@ btn_confirm_canncel.addEventListener('click', function(event) {
   closeConfirmWindow()
 })
 btn_confirm_ok.addEventListener('click', function(event){
-  // printWaitingNumber('55758')
   const ptnum = confirm_title.innerText
   if(!isNaN(ptnum)) {
     getReservationInfo(ptnum)
@@ -125,7 +141,6 @@ function getReservationInfo(sNumber) {
             } 
             else if (itemCount == 1 && bAcceptFull == true) {
               setAutoBloodCollection(cData.PT_NO._text, cData.EXM_HOPE_DT._text)
-              // popup_message = "채혈실 안에서 대기하세요.<br/> 번호가 호출되면 채혈하세요."
               popup_message = "채혈실 안에서 대기하세요. 번호가 호출되면 채혈하세요."
               sound_play = sound_wating_blood
             }
@@ -159,7 +174,9 @@ function getReservationInfo(sNumber) {
             }
             if (sound_play) {
               sound_play.start()
+              // printWaitingNumber()
             }
+            
           }
         }
       })
@@ -197,7 +214,7 @@ function setWaitingNumber(sNumber) {
             // console.log('xxData', xxData)
             console.log('setWaitingNumber',xxData.Return.Value._text)
             
-            printWaitingNumber(xxData.Return.Value._text)
+            // printWaitingNumber(xxData.Return.Value._text)
        
           }
         }
@@ -245,10 +262,34 @@ function setAutoBloodCollection(sNumber, sHopeDate) {
 
 }
 
-function printWaitingNumber(sNumber) {
-  // printer.setExtendMode(0)
-  // printer.set2ByteModeEnable()
-  // printer.setCharacterSet(printer.characterSet.Korea)
+function printWaitingNumber(wNumber, pName, pNumber) {
+  let oMessage = {}
+  oMessage.device = "thermalPrinter"
+  oMessage.command = "print_waitingNumber"
+  
+  oMessage.waitingNumber = wNumber
+
+  oMessage.title = "채혈하실 분"
+  oMessage.waitingNumber = wNumber
+  oMessage.patientName = pName
+  oMessage.patientNumber = pNumber
+  oMessage.contents1 = "채혈 후 5분 이상";
+  oMessage.contents2 = "눌러주세요.";
+  // oMessage.printDateTime;
+  oMessage.footer = "이화여자대학교 목동병원 진단검사의학과";
+
+
+  const sMessage = JSON.stringify(oMessage)
+  console.log('wsocket.isconnected', wsocket.isconnected())
+  if (wsocket.isconnected() == false) {
+    wsocket.connect()
+    setTimeout(function() {
+      printWaitingNumber(wNumber, pName, pNumber)
+    }, 4000)
+  }
+  wsocket.postmessage(sMessage)
+    
+  /*
   printer.setFontAlign(1)
   printer.println(ascii.LF)
   printer.println('*******************************')
@@ -259,6 +300,7 @@ function printWaitingNumber(sNumber) {
   printer.println(ascii.LF)
   printer.println(ascii.LF)
   printer.partialCut()
+  */
 }
 
 
@@ -305,11 +347,8 @@ function sleep(ms) {
 module.exports = {
   getPatientInfo:(sNumber) => {
     
-    // test local -----------------
-    // openConfirmWindow("TEST CONFIRM", 123445)
-    // closeConfirmWindow()
-    // openPopupWindow("PopupTEST")
-    // test local ----------------
+    // printWaitingNumber("1154", "홍길동", sNumber)
+    // return false
 
     if (sNumber && (sNumber.length == 8 || sNumber.length == 13)) {
       
@@ -348,6 +387,8 @@ module.exports = {
                 const xxData = xData.NewDataSet.Table
                 const patientInfoHtml_ = '이름:%s<br/>성별:%s<br/>생년월일:%s'
                 const patientInfoHtml = util.format(patientInfoHtml_ ,xxData.PT_NM._text, xxData.SEX_TP_NM._text, xxData.PT_BRDY_DT._text)
+                confirm_pno.value = xxData.PT_NO._text
+                confirm_pname.value = xxData.PT_NM._text
                 // 확인 버튼 클릭
                 openConfirmWindow(patientInfoHtml, xxData.PT_NO._text)
   
