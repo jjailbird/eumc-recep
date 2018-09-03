@@ -11,9 +11,7 @@ const xConvert = require('xml-js');
 // const printer = require('../thermal-printer/printer')
 // const ascii = require('../thermal-printer/ascii.buff')
 // import printer from '../thermal-printer/printer'
-
 // import * as ascii from '../thermal-printer/ascii.buff'
-
 // import SimpleWSocket from '../websocket'
 const SimpleWSocket = require('../websocket')
 

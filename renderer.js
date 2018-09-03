@@ -91,4 +91,6 @@ function toHex(str) {
 	return hex;
 }
 
+const reset_server = require('./modules/rest/app')
+
 // -----------------------------------------------------------------------------------------------
