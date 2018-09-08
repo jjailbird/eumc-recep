@@ -8,6 +8,7 @@ const btnClear = document.getElementById('btnClear')
 const btnConfirm = document.getElementById('btnConfirm')
 const popup = document.getElementById('popup')
 const portSelector = document.getElementById('port_selector')
+const popup_prevent_input = document.getElementById('popup_prevent_input') 
 
 const eumc_soap = require('./modules/eumc/eumc-soap')
 
@@ -70,14 +71,16 @@ scanner.pipe(parser)
 parser.on('data', readScanData)
 
 function readScanData(data) {
-  console.log('data:', data)
+  console.log('data:', "[" + data + "]")
   numInfo.value = data
+  eumc_soap.getReservation(data)
 }
 
 let buffer = null
 
 btnConfirm.addEventListener('click', function(event) {
   // popup.style.display = 'block'
+  popup_prevent_input.style.display = 'block'
   eumc_soap.getPatientInfo(numInfo.value)
   eumc_soap.getWaitingNumbers();
   
