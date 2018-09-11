@@ -34,9 +34,11 @@ btnClear.addEventListener('click', function(event) {
   // portSelector.style.display = 'block'
 })
 
+/*
 popup.addEventListener('click', function(event) {
   popup.style.display = 'none'
 })
+*/
 
 // Importing this adds a right-click menu with 'Inspect Element' option -------------------------
 const remote = require('electron').remote

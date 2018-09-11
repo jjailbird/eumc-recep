@@ -50,6 +50,9 @@ btn_confirm_ok.addEventListener('click', function(event){
   if(!isNaN(ptnum)) {
     getReservationInfo(ptnum)
   }
+
+  // TEST
+  // printWaitingNumber('0012', '이정환', '12345678', 'RECEIP', '내분비내과')
 })
 
 function openConfirmWindow(content, ptnum) {
@@ -68,13 +71,14 @@ function openPopupWindow(content, type) {
   popup_prevent_input.style.display = 'none'
   popup_content.innerHTML = content
   popup.style.display = 'block'
+  
   setTimeout(function() {
     popup.style.display = 'none'
-    // if (type == 'invalid_number') {
+    if (type != 'preserv') {
       txt_search_number.value = ""
-    //}
+    }
   
-  }, 2000)
+  }, 4000)
 }
 
 async function sound_demo() {
@@ -90,6 +94,56 @@ async function sound_demo() {
   sound_play.start()
 }
 
+function printWaitingNumber(wNumber, pName, pNumber, type, dept_nm) {
+  let oMessage = {}
+  let sound_play = null
+  
+  oMessage.device = "thermalPrinter"
+  oMessage.command = "print_waitingNumber"
+
+  oMessage.waitingNumber = wNumber
+  oMessage.patientName = pName
+  oMessage.patientNumber = pNumber
+
+  switch(type) {
+    case 'BLOOD':
+      oMessage.title = "채혈하실 분"
+      oMessage.contents1 = dept_nm + " 검사가 진행됩니다."
+      oMessage.contents2 = "채혈실 안에서 대기하세요."
+    
+      sound_play = sound_wating_blood
+      break;
+    case 'RECEIPT':
+      oMessage.title = "접수하실 분"
+      oMessage.contents1 = dept_nm + " 검사비 수납이 필요합니다."
+      oMessage.contents2 = "수납 후 접수대로 오세요."
+      
+      sound_play = sound_go_reception
+      break;
+    default:
+      oMessage.title = "접수 대기"
+      oMessage.contents1 = "번호가 호출되면 접수하세요."
+      oMessage.contents2 = ""
+      sound_play = sound_do_apply
+  } 
+  oMessage.footer = "이화여자대학교 목동병원 진단검사의학과";
+
+  openPopupWindow( oMessage.contents1 + "<br/>" + oMessage.contents2)
+  closeConfirmWindow()
+
+  const sMessage = JSON.stringify(oMessage)
+  console.log('wsocket.isconnected', wsocket.isconnected())
+  if (wsocket.isconnected() == false) {
+    wsocket.connect()
+    setTimeout(function() {
+      printWaitingNumber(wNumber, pName, pNumber, type, dept_nm)
+    }, 4000)
+  }
+  else {
+    wsocket.postmessage(sMessage)
+    sound_play.start()
+  }
+}
 
 function changeWaitingNumbers(sNumber) {
   console.log('change', sNumber)
@@ -124,10 +178,11 @@ function getReservationInfo(sNumber) {
             
             let itemCount = Array.isArray(xxData) ? xxData.length : 1
             let bAcceptFull = true
-            
-            console.log('itemCount',itemCount)
             let cData = null
-            if (Array.isArray(xxData)) {
+
+            console.log('itemCount',itemCount)
+            
+            if (itemCount > 1) {
 
               for(let i = 0;i<xxData.length; i++) {
                 // console.log(i, xxData[i])
@@ -149,45 +204,46 @@ function getReservationInfo(sNumber) {
             }
             
             if (itemCount == 0) {
-              popup_message = "예정된 진료가 없습니다."
+              openPopupWindow("예정된 진료가 없습니다.")
             } 
             else if (itemCount == 1 && bAcceptFull == true) {
-              setAutoBloodCollection(cData.PT_NO._text, cData.EXM_HOPE_DT._text, cData.PT_NM._text)
+              setAutoBloodCollection(cData.PT_NO._text, cData.EXM_HOPE_DT._text, cData.PT_NM._text, cData.DEPT_NM._text)
               console.log('setAutoBloodCollection', cData)
               // popup_message = "채혈실 안에서 대기하세요. 번호가 호출되면 채혈하세요."
               // sound_play = sound_wating_blood
             }
             else {
-              setWaitingNumber(sNumber, cData.PT_NM._text)    
-              if (bAcceptFull == false) {
-                popup_message = "수납 후 접수대로 오세요."
+                
+              if (itemCount > 1 && bAcceptFull == false) {
+                // popup_message = "수납 후 접수대로 오세요."
                 for(let i = 0;i<xxData.length; i++) {
                   const cData = xxData[i]
     
                   if (cData.RPY_STS_CD._text == 'N') {
-                    let popup_message_ = "환자명:%s<br/>진료과명:%s<br/>주치의 의사명:%s<br/>진료희망일자:%s<br/>수납 후 접수대로 오세요." 
-                    popup_message = util.format(popup_message_, cData.PT_NM._text, cData.DEPT_NM._text, cData.ANDR_STF_NM._text, cData.EXM_HOPE_DT._text)
-                    sound_play = sound_go_reception
+                    // let popup_message_ = "환자명:%s<br/>진료과명:%s<br/>주치의 의사명:%s<br/>진료희망일자:%s<br/>수납 후 접수대로 오세요." 
+                    // popup_message = util.format(popup_message_, cData.PT_NM._text, cData.DEPT_NM._text, cData.ANDR_STF_NM._text, cData.EXM_HOPE_DT._text)
+                    setWaitingNumber(sNumber, cData.PT_NM._text,'RECEIPT', cData.DEPT_NM._text)
+                    //sound_play = sound_go_reception
                     break
                   }
                 }
+
               }  
               else {
-                popup_message = "번호가 호출되면 접수하세요." // "접수대 앞에서 대기하세요. 번호가 호출됩니다"
-                sound_play = sound_do_apply
+                // popup_message = "번호가 호출되면 접수하세요." // "접수대 앞에서 대기하세요. 번호가 호출됩니다"
+                // sound_play = sound_do_apply
+                if (bAcceptFull == false)
+                {
+                  setWaitingNumber(sNumber, cData.PT_NM._text,'RECEIPT', cData.DEPT_NM._text)
+                } 
+                else
+                {
+                  setWaitingNumber(sNumber, cData.PT_NM._text,'WAIT_CALL', '')
+                }
+                
               }
               
             }
-
-            if (popup_message != "") {
-              closeConfirmWindow()
-              openPopupWindow(popup_message)
-            }
-            if (sound_play) {
-              sound_play.start()
-              
-            }
-            
           }
           else {
             openPopupWindow("접수대에서 문의하세요.")
@@ -198,12 +254,12 @@ function getReservationInfo(sNumber) {
     })
   }
   else {
-    openPopupWindow("올바른 조회 번호를 입력하시오")      
+    openPopupWindow("올바른 조회 번호를 입력하세요.")      
   }
 
 }
 
-function setWaitingNumber(sNumber, pName) {
+function setWaitingNumber(sNumber, pName, type, dept_nm) {
     
   if (sNumber && (sNumber.length == 8)) {
     let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_INS_KIOSK_WAITNO]]> </QID><QTYPE> <![CDATA[Package]]> </QTYPE><USERID> <![CDATA[RTE]]>  </USERID>  <EXECTYPE>  <![CDATA[FILL]]>  </EXECTYPE>   <P0>  <![CDATA[02]]>  </P0>  <P1>  <![CDATA[%s]]>  </P1></Table>"
@@ -220,31 +276,35 @@ function setWaitingNumber(sNumber, pName) {
       }
      
       client.LMService(args, function(err, result) {
+        
         if(result.LMServiceResult) {
           const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
-          // console.log('xData', xData)
+          console.log('xData', xData)
           if(xData.NewDataSet.Table) {
             const xxData = xData.NewDataSet.Table
             // console.log('xxData', xxData)
             const checkNum = xxData.Return.Value._text
-            console.log('setWaitingNumber',xxData.Return.Value._text)
+            // console.log('setWaitingNumber',xxData.Return.Value._text)
             if (checkNum == "0000")
               openPopupWindow("접수대에 문의하세요.")
             else             
-              printWaitingNumber(xxData.Return.Value._text,sNumber, pName, 'RECEIPT')
-       
+              printWaitingNumber(xxData.Return.Value._text,sNumber, pName, type, dept_nm)
+              //'RECEIPT'
           }
+        }
+        else {
+          console.log('check', result)
         }
       })
       
     })
   }
   else {
-    openPopupWindow('올바른 조회 번호를 입력하시오')      
+    openPopupWindow('올바른 조회 번호를 입력하세요.')      
   }
 }
 
-function setAutoBloodCollection(sNumber, sHopeDate, sPtName) {
+function setAutoBloodCollection(sNumber, sHopeDate, sPtName, dept_nm) {
     
   if (sNumber && (sNumber.length == 8) && sHopeDate) {
     let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_INS_KIOSK_ACCEPT]]></QID><QTYPE><![CDATA[Package]]></QTYPE><USERID><![CDATA[RTE]]></USERID><EXECTYPE><![CDATA[FILL]]></EXECTYPE><P0><![CDATA[02]]></P0><P1><![CDATA[%s]]></P1><P2><![CDATA[%s]]></P2></Table>"
@@ -273,9 +333,9 @@ function setAutoBloodCollection(sNumber, sHopeDate, sPtName) {
               openPopupWindow("이미 번호표를 발급 받으셨습니다.")
             }
             else {
-              openPopupWindow("채혈실 안에서 대기하세요. 번호가 호출되면 채혈하세요.")
-              sound_wating_blood.start()
-              printWaitingNumber(checkBloodNum,sPtName,sNumber, 'blood')
+              // openPopupWindow("채혈실 안에서 대기하세요. 번호가 호출되면 채혈하세요.")
+              // sound_wating_blood.start()
+              printWaitingNumber(checkBloodNum,sPtName,sNumber, 'BLOOD', dept_nm)
             }
             
 
@@ -286,60 +346,9 @@ function setAutoBloodCollection(sNumber, sHopeDate, sPtName) {
     })
   }
   else {
-    console.log('err','올바른 조회 번호를 입력하시오')      
+    console.log('err','올바른 조회 번호를 입력하세요.')      
   }
-
 }
-
-function printWaitingNumber(wNumber, pName, pNumber, type) {
-  let oMessage = {}
-  oMessage.device = "thermalPrinter"
-  oMessage.command = "print_waitingNumber"
-  
-  oMessage.waitingNumber = wNumber
-  if (type === 'blood')
-    oMessage.title = "채혈하실 분"
-  else
-    oMessage.title = "접수하실 분"
-
-  oMessage.waitingNumber = wNumber
-  oMessage.patientName = pName
-  oMessage.patientNumber = pNumber
-  if (type === 'blood') {
-    oMessage.contents1 = "채혈 후 5분 이상";
-    oMessage.contents2 = "눌러주세요.";
-  }
-  else {
-    oMessage.contents1 = "접수실에서 기다려주세요.";
-    oMessage.contents2 = "";
-  }
-  // oMessage.printDateTime;
-  oMessage.footer = "이화여자대학교 목동병원 진단검사의학과";
-
-  const sMessage = JSON.stringify(oMessage)
-  console.log('wsocket.isconnected', wsocket.isconnected())
-  if (wsocket.isconnected() == false) {
-    wsocket.connect()
-    setTimeout(function() {
-      printWaitingNumber(wNumber, pName, pNumber, type)
-    }, 4000)
-  }
-  wsocket.postmessage(sMessage)
-    
-  /*
-  printer.setFontAlign(1)
-  printer.println(ascii.LF)
-  printer.println('*******************************')
-
-  printer.println(util.format('Waiting Number: %s', sNumber))
-  
-  printer.println('*******************************')
-  printer.println(ascii.LF)
-  printer.println(ascii.LF)
-  printer.partialCut()
-  */
-}
-
 
 function Sound(source,volume,loop)
 {
@@ -384,8 +393,8 @@ function sleep(ms) {
 module.exports = {
   getPatientInfo:(sNumber) => {
     
-    // printWaitingNumber("1154", "홍길동", sNumber)
-    // return false
+    // TEST
+    // openConfirmWindow("테스트 팝업", '12345678')
 
     if (sNumber && (sNumber.length == 8 || sNumber.length == 13)) {
       
@@ -436,8 +445,8 @@ module.exports = {
             }
           })
         } else {
-          console.log('getPatientInfo', 'soap result error : no LMService')
-          
+          // console.log('getPatientInfo', 'soap result error : no LMService')
+          openPopupWindow('서버 데이터를 받아올 수 없습니다.<br/> 다시 시도 하십시요.', 'preserv')
         }
 
         // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< LMService Result
@@ -445,7 +454,6 @@ module.exports = {
       })
     }
     else {
-      // console.log('err','올바른 조회 번호를 입력하시오')
       openPopupWindow('올바른 조회번호를 입력하시요.')      
     }
   },
@@ -474,7 +482,8 @@ module.exports = {
           })
         }
         else {
-          console.log('getWaitingNumbers', 'soap result error : no LMService')
+          // console.log('getWaitingNumbers', 'soap result error : no LMService')
+          openPopupWindow('서버 데이터를 받아올 수 없습니다.<br/> 다시 시도 하십시요.', 'preserv')
         }
         // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< LMService Result
         
