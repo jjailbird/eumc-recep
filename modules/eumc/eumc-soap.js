@@ -245,8 +245,9 @@ function getReservationInfo(sNumber) {
               
             }
           }
-          else {
-            openPopupWindow("접수대에서 문의하세요.")
+          else 
+          {
+            setWaitingNumber(sNumber, confirm_pname.value, '', '')
           }
         }
       })
@@ -285,11 +286,13 @@ function setWaitingNumber(sNumber, pName, type, dept_nm) {
             // console.log('xxData', xxData)
             const checkNum = xxData.Return.Value._text
             // console.log('setWaitingNumber',xxData.Return.Value._text)
-            if (checkNum == "0000")
-              openPopupWindow("접수대에 문의하세요.")
-            else             
+            if (checkNum == "0000"){
+              // openPopupWindow("접수대에 문의하세요.")
+              printWaitingNumber(xxData.Return.Value._text,sNumber, pName, type, dept_nm)
+            }else{             
               printWaitingNumber(xxData.Return.Value._text,sNumber, pName, type, dept_nm)
               //'RECEIPT'
+            }
           }
         }
         else {
