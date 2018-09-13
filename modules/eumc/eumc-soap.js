@@ -1,3 +1,4 @@
+// version:18.09.13
 const {ipcRenderer} = require('electron')
 const soap = require('soap')
 const convert = require('xml-js')
@@ -51,8 +52,8 @@ btn_confirm_ok.addEventListener('click', function(event){
     getReservationInfo(ptnum)
   }
 
-  // TEST
-  // printWaitingNumber('0012', '이정환', '12345678', 'RECEIP', '내분비내과')
+  // TEST for PRINT
+  // printWaitingNumber('0012', '이정환', '12345678', 'BLOOD', '내분비내과')
 })
 
 function openConfirmWindow(content, ptnum) {
@@ -109,7 +110,7 @@ function printWaitingNumber(wNumber, pName, pNumber, type, dept_nm) {
     case 'BLOOD':
       oMessage.title = "채혈하실 분"
       oMessage.contents1 = dept_nm + " 검사가 진행됩니다."
-      oMessage.contents2 = "채혈실 안에서 대기하세요."
+      oMessage.contents2 = "채혈실 안에서 대기하세요.\n채혈후 5분이상 눌러주세요."
     
       sound_play = sound_wating_blood
       break;
@@ -396,7 +397,7 @@ function sleep(ms) {
 module.exports = {
   getPatientInfo:(sNumber) => {
     
-    // TEST
+    // TEST for PRINT
     // openConfirmWindow("테스트 팝업", '12345678')
 
     if (sNumber && (sNumber.length == 8 || sNumber.length == 13)) {
@@ -415,12 +416,15 @@ module.exports = {
       }
       else if (sNumber.length == 13) {
         // 주민번호
+        // pn = sNumber
         ssn = sNumber
         sChecker = "2"
 
       }
 
       sParam = util.format(sQuery, sChecker, pn, ssn)
+      console.log('getPatientInfo', sParam)
+
       soap.createClient(test_url2, function(err, client) {
         const args = {
           sGubun: 'GETQUERY',
