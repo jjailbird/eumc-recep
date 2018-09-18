@@ -52,8 +52,9 @@ btn_confirm_ok.addEventListener('click', function(event){
     getReservationInfo(ptnum)
   }
 
-  // TEST for PRINT
-  // printWaitingNumber('0012', '이정환', '12345678', 'BLOOD', '내분비내과')
+  // TEST for PRINT RECEIPT / BLOOD
+  // printWaitingNumber('0012', '이정환', '12345678', 'RECEIPT', '내분비내과')
+  
 })
 
 function openConfirmWindow(content, ptnum) {
@@ -129,7 +130,7 @@ function printWaitingNumber(wNumber, pName, pNumber, type, dept_nm) {
   } 
   oMessage.footer = "이화여자대학교 목동병원 진단검사의학과";
 
-  openPopupWindow( oMessage.contents1 + "<br/>" + oMessage.contents2)
+  openPopupWindow(oMessage.contents1 + "<br/>" + oMessage.contents2)
   closeConfirmWindow()
 
   const sMessage = JSON.stringify(oMessage)
