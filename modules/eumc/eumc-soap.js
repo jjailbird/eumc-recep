@@ -437,14 +437,25 @@ module.exports = {
             if(result.LMServiceResult) {
               const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
               console.log('getPatientInfo:xData', xData)
+             
+              
               if(xData.NewDataSet.Table) {
+              
                 const xxData = xData.NewDataSet.Table
-                const patientInfoHtml_ = '이름:%s<br/>성별:%s<br/>생년월일:%s'
-                const patientInfoHtml = util.format(patientInfoHtml_ ,xxData.PT_NM._text, xxData.SEX_TP_NM._text, xxData.PT_BRDY_DT._text)
-                confirm_pno.value = xxData.PT_NO._text
-                confirm_pname.value = xxData.PT_NM._text
-                // 확인 버튼 클릭
-                openConfirmWindow(patientInfoHtml, xxData.PT_NO._text)
+                let itemCount = Array.isArray(xxData) ? xxData.length : 1
+                
+                // 환자번호 갯수 검사
+                if (itemCount == 1) {
+                  const patientInfoHtml_ = '이름:%s<br/>성별:%s<br/>생년월일:%s'
+                  const patientInfoHtml = util.format(patientInfoHtml_ ,xxData.PT_NM._text, xxData.SEX_TP_NM._text, xxData.PT_BRDY_DT._text)
+                  confirm_pno.value = xxData.PT_NO._text
+                  confirm_pname.value = xxData.PT_NM._text
+                  // 확인 버튼 클릭
+                  openConfirmWindow(patientInfoHtml, xxData.PT_NO._text)
+                }
+                else {
+                  openPopupWindow("접수대에 문의하세요.", "Patient_duplicated")
+                }
               }
               else {
                 openPopupWindow("등록된 정보가 없습니다.", "invalid_number")
