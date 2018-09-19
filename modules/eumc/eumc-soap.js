@@ -288,12 +288,11 @@ function setWaitingNumber(sNumber, pName, type, dept_nm) {
             // console.log('xxData', xxData)
             const checkNum = xxData.Return.Value._text
             // console.log('setWaitingNumber',xxData.Return.Value._text)
-            if (checkNum == "0000"){
-              // openPopupWindow("접수대에 문의하세요.")
-              printWaitingNumber(xxData.Return.Value._text,sNumber, pName, type, dept_nm)
-            }else{             
-              printWaitingNumber(xxData.Return.Value._text,sNumber, pName, type, dept_nm)
-              //'RECEIPT'
+            if (checkNum == "0000") {
+              printWaitingNumber(xxData.Return.Value._text, pName, sNumber, type, dept_nm)
+            }
+            else {             
+              printWaitingNumber(xxData.Return.Value._text, pName, sNumber, type, dept_nm)
             }
           }
         }
@@ -338,12 +337,8 @@ function setAutoBloodCollection(sNumber, sHopeDate, sPtName, dept_nm) {
               openPopupWindow("이미 번호표를 발급 받으셨습니다.")
             }
             else {
-              // openPopupWindow("채혈실 안에서 대기하세요. 번호가 호출되면 채혈하세요.")
-              // sound_wating_blood.start()
-              printWaitingNumber(checkBloodNum,sPtName,sNumber, 'BLOOD', dept_nm)
+              printWaitingNumber(checkBloodNum, sPtName, sNumber, 'BLOOD', dept_nm)
             }
-            
-
           }
         }
       })
