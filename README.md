@@ -43,3 +43,12 @@ Note: If you're using Linux Bash for Windows, [see this guide](https://www.howto
 ## License
 
 [CC0 1.0 (Public Domain)](LICENSE.md)
+
+
+
+## EUMC SOAP 관련
+
+1. Scanner - Read 환자번호 / 주민번호로 환자정보 조회 (환자명/환자번호 리턴)
+  renderer.js/eumc_soap.getPatientInfo(numInfo.value)
+2. 환자번호로 예약현황 조회 (사용자 확인 버튼 클릭 후) 예약 현황 조회 
+  modules/eumc/eumc_soap.js/getReservationInfo()

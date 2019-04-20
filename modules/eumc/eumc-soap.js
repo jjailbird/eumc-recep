@@ -1,14 +1,35 @@
 // version:18.09.13
-const {ipcRenderer} = require('electron')
+const {ipcRenderer, remote} = require('electron')
 const soap = require('soap')
 const convert = require('xml-js')
 const util = require('util')
+const fs = require('fs')
+const dateFormat = require("dateformat")
 
-const test_url1 = 'http://esysinf.eumc.ac.kr/MS/LM/LMWebService.asmx?wsdl'
-const test_url2 = 'http://devensysinf.eumc.ac.kr/MS/LM/LMWebService.asmx?wsdl'
-const test_url3 = 'http://www.holidaywebservice.com//HolidayService_v2/HolidayService2.asmx?wsdl'
+const sBasePath = remote.app.getAppPath().toString()
+const sConfigPath = sBasePath + '/config.json' 
+let sRunAs = ""
+let jConfig = null
+if (fs.existsSync(sConfigPath) === true)
+{
+  jConfig = JSON.parse(fs.readFileSync(sConfigPath)) 
 
-const xConvert = require('xml-js');
+  sRunAs = jConfig["runas"] ? jConfig["runas"] : "dev" 
+  console.log('sRunAs', sRunAs)
+}
+else
+{
+  console.log('no config file')
+}
+
+const prod_url = 'http://esysinf.eumc.ac.kr/MS/LM/LMWebService.asmx?wsdl'
+const dev_url = 'http://devensysinf.eumc.ac.kr/MS/LM/LMWebService.asmx?wsdl'
+const test_url = 'http://www.holidaywebservice.com//HolidayService_v2/HolidayService2.asmx?wsdl'
+const service_url = (sRunAs == 'prod') ? prod_url : dev_url
+
+console.log('service_url', service_url)
+
+const xConvert = require('xml-js')
 // const printer = require('../thermal-printer/printer')
 // const ascii = require('../thermal-printer/ascii.buff')
 // import printer from '../thermal-printer/printer'
@@ -19,7 +40,6 @@ const SimpleWSocket = require('../websocket')
 const wsocket = new SimpleWSocket('ws://localhost:8181')
 wsocket.isreconnect = true
 wsocket.connect()
-
 wsocket.onmessage = function(message) {
   console.log(message)
 }
@@ -36,6 +56,7 @@ const btn_confirm_ok = document.getElementById('btn_confirm_ok')
 const btn_confirm_canncel = document.getElementById('btn_confirm_cancel')
 const txt_search_number = document.getElementById('numInfo')
 const popup_prevent_input = document.getElementById('popup_prevent_input')
+const div_service_status = document.getElementById('div_service_status')
 
 const sound_do_apply = new Sound("assets/audio/번호가 호출되면 접수하세요.mp3",100,false);
 const sound_go_reception = new Sound("assets/audio/수납 후 접수대로 오세요.mp3",100,false);
@@ -43,9 +64,12 @@ const sound_wating_blood = new Sound("assets/audio/채혈실 안에서 대기하
 
 let prevent_input = false
 
+div_service_status.innerText = (sRunAs == 'dev') ? "Running as TEST mode" : ""
+
 btn_confirm_canncel.addEventListener('click', function(event) {
   closeConfirmWindow()
 })
+
 btn_confirm_ok.addEventListener('click', function(event){
   const ptnum = confirm_title.innerText
   if(!isNaN(ptnum)) {
@@ -165,7 +189,7 @@ function getReservationInfo(sNumber) {
 
     sParam = util.format(sQuery, pn)
 
-    soap.createClient(test_url2, function(err, client) {
+    soap.createClient(service_url, function(err, client) {
       const args = {
         sGubun: 'GETQUERY',
         sParam: sParam
@@ -211,29 +235,21 @@ function getReservationInfo(sNumber) {
             else if (itemCount == 1 && bAcceptFull == true) {
               setAutoBloodCollection(cData.PT_NO._text, cData.EXM_HOPE_DT._text, cData.PT_NM._text, cData.DEPT_NM._text)
               console.log('setAutoBloodCollection', cData)
-              // popup_message = "채혈실 안에서 대기하세요. 번호가 호출되면 채혈하세요."
-              // sound_play = sound_wating_blood
             }
             else {
                 
               if (itemCount > 1 && bAcceptFull == false) {
-                // popup_message = "수납 후 접수대로 오세요."
                 for(let i = 0;i<xxData.length; i++) {
                   const cData = xxData[i]
     
                   if (cData.RPY_STS_CD._text == 'N') {
-                    // let popup_message_ = "환자명:%s<br/>진료과명:%s<br/>주치의 의사명:%s<br/>진료희망일자:%s<br/>수납 후 접수대로 오세요." 
-                    // popup_message = util.format(popup_message_, cData.PT_NM._text, cData.DEPT_NM._text, cData.ANDR_STF_NM._text, cData.EXM_HOPE_DT._text)
                     setWaitingNumber(sNumber, cData.PT_NM._text,'RECEIPT', cData.DEPT_NM._text)
-                    //sound_play = sound_go_reception
                     break
                   }
                 }
 
               }  
               else {
-                // popup_message = "번호가 호출되면 접수하세요." // "접수대 앞에서 대기하세요. 번호가 호출됩니다"
-                // sound_play = sound_do_apply
                 if (bAcceptFull == false)
                 {
                   setWaitingNumber(sNumber, cData.PT_NM._text,'RECEIPT', cData.DEPT_NM._text)
@@ -272,7 +288,7 @@ function setWaitingNumber(sNumber, pName, type, dept_nm) {
 
     console.log('sParam', sParam)
     
-    soap.createClient(test_url2, function(err, client) {
+    soap.createClient(service_url, function(err, client) {
       const args = {
         sGubun: 'SETQUERY',
         sParam: sParam
@@ -317,7 +333,7 @@ function setAutoBloodCollection(sNumber, sHopeDate, sPtName, dept_nm) {
 
     sParam = util.format(sQuery, pn, sHopeDate)
 
-    soap.createClient(test_url2, function(err, client) {
+    soap.createClient(service_url, function(err, client) {
       const args = {
         sGubun: 'SETQUERY',
         sParam: sParam
@@ -392,9 +408,7 @@ function sleep(ms) {
 
 module.exports = {
   getPatientInfo:(sNumber) => {
-    
-    // TEST for PRINT
-    // openConfirmWindow("테스트 팝업", '12345678')
+    // 환자번호(1) / 주민번호(2) 로 환자 정보 조회 결과
 
     if (sNumber && (sNumber.length == 8 || sNumber.length == 13)) {
       
@@ -415,13 +429,12 @@ module.exports = {
         // pn = sNumber
         ssn = sNumber
         sChecker = "2"
-
-      }
+     }
 
       sParam = util.format(sQuery, sChecker, pn, ssn)
       console.log('getPatientInfo', sParam)
 
-      soap.createClient(test_url2, function(err, client) {
+      soap.createClient(service_url, function(err, client) {
         const args = {
           sGubun: 'GETQUERY',
           sParam: sParam
@@ -430,12 +443,9 @@ module.exports = {
         // LMService Result >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         if (client && client.LMService) {
           client.LMService(args, function(err, result) {
-            if(result.LMServiceResult) {
+            if (result.LMServiceResult) {
               const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
-              console.log('getPatientInfo:xData', xData)
-             
-              
-              if(xData.NewDataSet.Table) {
+              if (typeof xData.NewDataSet.Table !== 'undefined') {
               
                 const xxData = xData.NewDataSet.Table
                 let itemCount = Array.isArray(xxData) ? xxData.length : 1
@@ -450,7 +460,7 @@ module.exports = {
                   openConfirmWindow(patientInfoHtml, xxData.PT_NO._text)
                 }
                 else {
-                  openPopupWindow("접수대에 문의하세요.", "Patient_duplicated")
+                  openPopupWindow("접수대에 문의하세요.등록번호가 여러개입니다.", "pno_multiple")
                 }
               }
               else {
@@ -475,7 +485,7 @@ module.exports = {
     
       let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_KIOSK_TOTALWAIT_SELECT]]> </QID><QTYPE><![CDATA[Package]]></QTYPE><USERID><![CDATA[RTE]]></USERID><EXECTYPE><![CDATA[FILL]]></EXECTYPE><P0><![CDATA[02]]></P0></Table>"
       let sParam = sQuery
-      soap.createClient(test_url2, function(err, client) {
+      soap.createClient(service_url, function(err, client) {
         const args = {
           sGubun: 'GETQUERY',
           sParam: sParam
@@ -488,7 +498,7 @@ module.exports = {
             if(result.LMServiceResult) {
               const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
               console.log('xData', xData)
-              if(xData.NewDataSet.Table) {
+              if(typeof xData.NewDataSet.Table !== 'undefined') {
                 const xxData = xData.NewDataSet.Table
                 changeWaitingNumbers(xxData.CNT._text)
               }
@@ -505,10 +515,78 @@ module.exports = {
         
   },
   getReservation: (sNumber) => {
-
     getReservationInfo(sNumber)
-  }
+  },
+  getIsHoliday: () => {
+    let sQuery = "<?xml version='1.0' encoding='UTF-8'?>"
+    + "<Table>"
+    + "<QID>"
+    + "<![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_KIOSK_HDY_SELECT]]>"
+    + "</QID>"
+    + "<QTYPE>"
+    + "<![CDATA[Package]]>"
+    + "</QTYPE>"
+    + "<USERID>"
+    + "<![CDATA[RTE]]>"
+    + "</USERID>"
+    + "<EXECTYPE>"
+    + "<![CDATA[FILL]]>"
+    + "</EXECTYPE>"
+    + "<P0>"
+    + "<![CDATA[02]]>"
+    + "</P0>"
+    + "<P1>"
+    + "<![CDATA[%s]]>"
+    + "</P1>"
+    + "</Table>";
+
+    let sParam = ""
+    let today = dateFormat(new Date(), "isoDate")
+    sParam = util.format(sQuery, today)
+
+    const args = {
+      sGubun: 'GETQUERY',
+      sParam: sParam
+    }
+    
+    /*
+    soap.createClientAsync(service_url).then((client) => {
+      return client.LMServiceAsync(args)
+    }).then((result) => {
+      if(typeof result.LMServiceResult !== 'undefined') {
+        const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
+        console.log('xData', xData)
+        if(typeof xData.NewDataSet.Table !== 'undefined') {
+          const xxData = xData.NewDataSet.Table
+          console.log('HDY_YN', HDY_YN)
+        }
+      }
+    }).catch((err) => {
+      console.log('error:', err)
+    });
+    */
+    return new Promise((resolve, reject) => {
+      soap.createClientAsync(service_url).then((client) => {
+        return client.LMServiceAsync(args)
+      }).then((result) => {
+        if(typeof result.LMServiceResult !== 'undefined') {
+          const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
+          console.log('xData', xData)
+          if(typeof xData.NewDataSet.Table !== 'undefined') {
+            const xxData = xData.NewDataSet.Table
+            resolve(HDY_YN)
+          }
+        }
+      }).catch((err) => {
+        console.log('error:', err)
+      });
   
+      reject(new Error("Request is failed"));
+      
+    });
+    
+  }
+ 
 }
 
 

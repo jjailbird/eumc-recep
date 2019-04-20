@@ -11,6 +11,7 @@ const portSelector = document.getElementById('port_selector')
 const popup_prevent_input = document.getElementById('popup_prevent_input') 
 
 const eumc_soap = require('./modules/eumc/eumc-soap')
+const shutdown = require('electron-shutdown-command');
 
 let scanPort = 'COM4'
 
@@ -33,6 +34,7 @@ btnClear.addEventListener('click', function(event) {
   }
   // portSelector.style.display = 'block'
 })
+
 
 /*
 popup.addEventListener('click', function(event) {
@@ -83,9 +85,9 @@ let buffer = null
 btnConfirm.addEventListener('click', function(event) {
   // popup.style.display = 'block'
   popup_prevent_input.style.display = 'block'
+  console.log('getPatientInfo by', numInfo.value)
   eumc_soap.getPatientInfo(numInfo.value)
   eumc_soap.getWaitingNumbers();
-  
 })
 
 function toHex(str) {
@@ -99,3 +101,10 @@ function toHex(str) {
 const reset_server = require('./modules/rest/app')
 
 // -----------------------------------------------------------------------------------------------
+
+// Check holiday and system shut down
+eumc_soap.getIsHoliday().then((result) => {
+  console.log(result)
+}).catch((err) => {
+  console.log(err)
+})
