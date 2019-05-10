@@ -71,13 +71,14 @@ btn_confirm_canncel.addEventListener('click', function(event) {
 })
 
 btn_confirm_ok.addEventListener('click', function(event){
-  const ptnum = confirm_title.innerText
+  const ptnum = confirm_pno.value// confirm_title.innerText
   if(!isNaN(ptnum)) {
-    getReservationInfo(ptnum)
+    // getReservationInfo(ptnum)
+    setWaitingNumber(ptnum, confirm_pname.value, '', '')
   }
 
   // TEST for PRINT RECEIPT / BLOOD
-  // printWaitingNumber('0012', '이정환', '12345678', 'RECEIPT', '내분비내과')
+  // printWaitingNumber('0012', '이정환', '12345678', '', '내분비내과')
   
 })
 
@@ -103,7 +104,10 @@ function openPopupWindow(content, type) {
     if (type != 'preserv') {
       txt_search_number.value = ""
     }
-  
+    if (type == 'close_confirm') {
+      closeConfirmWindow()
+    }
+
   }, 4000)
 }
 
@@ -179,102 +183,76 @@ function changeWaitingNumbers(sNumber) {
 function getReservationInfo(sNumber) {
   
   sNumber = sNumber.trim()
-  console.log('getReservationInfo', sNumber, sNumber.length)
-  if (sNumber && (sNumber.length == 8)) {
-    let popup_message = ""
-    let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_BLCL_KIOSK_SELECT]]> </QID><QTYPE> <![CDATA[Package]]> </QTYPE><USERID> <![CDATA[RTE]]>  </USERID>  <EXECTYPE>  <![CDATA[FILL]]>  </EXECTYPE>   <P0>  <![CDATA[02]]>  </P0>  <P1>  <![CDATA[%s]]>  </P1></Table>"
-    let sParam = ""
-    let pn = sNumber
-    let sound_play = null
+  console.log('getReservationInfo', sNumber)
+  if (isNaN(sNumber) || sNumber.length != 8)
+  {
+    openPopupWindow(sNumber + '는 잘못된 등록번호입니다.')
+    return false
+  }
+  
+  let popup_message = ""
+  let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_BLCL_KIOSK_SELECT]]> </QID><QTYPE> <![CDATA[Package]]> </QTYPE><USERID> <![CDATA[RTE]]>  </USERID>  <EXECTYPE>  <![CDATA[FILL]]>  </EXECTYPE>   <P0>  <![CDATA[02]]>  </P0>  <P1>  <![CDATA[%s]]>  </P1></Table>"
+  let sound_play = null
+  
+  const args = {
+    sGubun: 'GETQUERY',
+    sParam: util.format(sQuery, sNumber)
+  }
+  
+  return new Promise((resolve, reject) => {
+    soap.createClientAsync(service_url).then((client) => {
+      console.log('getReservationInfo',args)
+      return client.LMServiceAsync(args)
+    }).then((result) => {
+      console.log(result[0].LMServiceResult)
+      
+      if (typeof result[0].LMServiceResult === 'undefined') {
+        reject(new Error('LMServiceResult undefined'))
+        return false
+      }
 
-    sParam = util.format(sQuery, pn)
+      const xData = xConvert.xml2js(result[0].LMServiceResult, {compact: true})
 
-    soap.createClient(service_url, function(err, client) {
-      const args = {
-        sGubun: 'GETQUERY',
-        sParam: sParam
+      if (typeof xData.NewDataSet.Table === 'undefined') {
+        reject(new Error('NewDataSet.table undefined'))
+        //openPopupWindow("채혈 처방이 없습니다.", 'close_confirm')
+        //return false  
       }
       
-      client.LMService(args, function(err, result) {
-        console.log('getReservationInfo', result)
-        if(result.LMServiceResult) {
-          const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
-          if (xData.NewDataSet.Table) {
-            const xxData = xData.NewDataSet.Table
-            
-            let itemCount = Array.isArray(xxData) ? xxData.length : 1
-            let bAcceptFull = true
-            let cData = null
-
-            console.log('itemCount',itemCount)
-            
-            if (itemCount > 1) {
-
-              for(let i = 0;i<xxData.length; i++) {
-                // console.log(i, xxData[i])
-                cData = xxData[i]
-  
-                if (cData.RPY_STS_CD._text == 'N') {
-                  bAcceptFull = false
-                  break
-                }
-              }
-  
-            } 
-            else {
-              cData = xxData
-              if (cData.RPY_STS_CD._text == 'N') {
-                bAcceptFull = false
-              }
-        
-            }
-            
-            if (itemCount == 0) {
-              openPopupWindow("예정된 진료가 없습니다.")
-            } 
-            else if (itemCount == 1 && bAcceptFull == true) {
-              setAutoBloodCollection(cData.PT_NO._text, cData.EXM_HOPE_DT._text, cData.PT_NM._text, cData.DEPT_NM._text)
-              console.log('setAutoBloodCollection', cData)
-            }
-            else {
-                
-              if (itemCount > 1 && bAcceptFull == false) {
-                for(let i = 0;i<xxData.length; i++) {
-                  const cData = xxData[i]
-    
-                  if (cData.RPY_STS_CD._text == 'N') {
-                    setWaitingNumber(sNumber, cData.PT_NM._text,'RECEIPT', cData.DEPT_NM._text)
-                    break
-                  }
-                }
-
-              }  
-              else {
-                if (bAcceptFull == false)
-                {
-                  setWaitingNumber(sNumber, cData.PT_NM._text,'RECEIPT', cData.DEPT_NM._text)
-                } 
-                else
-                {
-                  setWaitingNumber(sNumber, cData.PT_NM._text,'WAIT_CALL', '')
-                }
-                
-              }
-              
-            }
-          }
-          else 
-          {
-            setWaitingNumber(sNumber, confirm_pname.value, '', '')
+      const xxData = xData.NewDataSet.Table
+      console.log('Reservations', xxData)
+      let itemCount = Array.isArray(xxData) ? xxData.length : 1
+      let bAcceptFull = true
+      let cData = null
+      
+      if (itemCount > 1) {
+        for(let i = 0;i<xxData.length; i++) {
+          cData = xxData[i]
+          if (cData.RPY_STS_CD._text == 'N') {
+            bAcceptFull = false
+            break
           }
         }
-      })
-      
-    })
-  }
-  else {
-    openPopupWindow("올바른 조회 번호를 입력하세요.")      
-  }
+      } else {
+        cData = xxData
+        if (cData.RPY_STS_CD._text == 'N') {
+          bAcceptFull = false
+        }
+      }          
+
+      if (bAcceptFull === false) {
+        //openPopupWindow('수납이 필요합니다.')
+      } else {
+        //setWaitingNumber(sNumber, confirm_pname.value, '', '')
+      }
+
+      setWaitingNumber(sNumber, confirm_pname.value, '', '')
+
+    }).catch((err) => {
+      console.log('error:', err)
+    });
+
+  })
 
 }
 
@@ -301,9 +279,7 @@ function setWaitingNumber(sNumber, pName, type, dept_nm) {
           console.log('xData', xData)
           if(xData.NewDataSet.Table) {
             const xxData = xData.NewDataSet.Table
-            // console.log('xxData', xxData)
             const checkNum = xxData.Return.Value._text
-            // console.log('setWaitingNumber',xxData.Return.Value._text)
             if (checkNum == "0000") {
               printWaitingNumber(xxData.Return.Value._text, pName, sNumber, type, dept_nm)
             }
@@ -407,79 +383,77 @@ function sleep(ms) {
 }
 
 module.exports = {
-  getPatientInfo:(sNumber) => {
-    // 환자번호(1) / 주민번호(2) 로 환자 정보 조회 결과
+  getPatientInfo: (sNumber) => {
+    sNumber = sNumber.trim()
+    if (isNaN(sNumber) || (sNumber.length != 8 && sNumber.length != 13)) {
+      openPopupWindow('올바른 조회번호를 입력하시요.')
+      return false
+    }
 
-    if (sNumber && (sNumber.length == 8 || sNumber.length == 13)) {
-      
-      let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_PAT_KIOSK_SELECT]]> </QID><QTYPE> <![CDATA[Package]]> </QTYPE><USERID> <![CDATA[RTE]]>  </USERID>  <EXECTYPE>  <![CDATA[FILL]]>  </EXECTYPE>   <P0>  <![CDATA[02]]>  </P0>  <P1>  <![CDATA[%s]]>  </P1>  <P2> <![CDATA[%s]]>  </P2>  <P3> <![CDATA[%s]]> </P3></Table>"
-      let sParam = ""
-      let sChecker = ""
-      let ssn = ""
-      let pn = ""
+    // printWaitingNumber('0012', '이정환', '12345678', '', '내분비내과')
+    let sQuery = "<?xml version='1.0' encoding='UTF-8'?><Table><QID><![CDATA[PKG_MSE_LM_INTERFACE.PC_MSE_PAT_KIOSK_SELECT]]> </QID><QTYPE> <![CDATA[Package]]> </QTYPE><USERID> <![CDATA[RTE]]>  </USERID>  <EXECTYPE>  <![CDATA[FILL]]>  </EXECTYPE>   <P0>  <![CDATA[02]]>  </P0>  <P1>  <![CDATA[%s]]>  </P1>  <P2> <![CDATA[%s]]>  </P2>  <P3> <![CDATA[%s]]> </P3></Table>"
+    let sParam = ""
+    let sChecker = "", ssn = "", pn = ""
 
-      if (sNumber.length == 8) {
-        // 등록번호
-        pn = sNumber
-        sChecker = "1"
-        // ssn = "1903061042114"
-      }
-      else if (sNumber.length == 13) {
-        // 주민번호
-        // pn = sNumber
-        ssn = sNumber
-        sChecker = "2"
-     }
+    if (sNumber.length == 8) {
+      // 등록번호
+      pn = sNumber
+      sChecker = "1"
+    }
+    else if (sNumber.length == 13) {
+      // 주민번호
+      ssn = sNumber
+      sChecker = "2"
+    }
+    sParam = util.format(sQuery, sChecker, pn, ssn)
+    console.log('getPatientInfo', sParam)
 
-      sParam = util.format(sQuery, sChecker, pn, ssn)
-      console.log('getPatientInfo', sParam)
-
-      soap.createClient(service_url, function(err, client) {
-        const args = {
-          sGubun: 'GETQUERY',
-          sParam: sParam
-        }
-        
-        // LMService Result >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        if (client && client.LMService) {
-          client.LMService(args, function(err, result) {
-            if (result.LMServiceResult) {
-              const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
-              if (typeof xData.NewDataSet.Table !== 'undefined') {
-              
-                const xxData = xData.NewDataSet.Table
-                let itemCount = Array.isArray(xxData) ? xxData.length : 1
-                
-                // 환자번호 갯수 검사
-                if (itemCount == 1) {
-                  const patientInfoHtml_ = '이름:%s<br/>성별:%s<br/>생년월일:%s'
-                  const patientInfoHtml = util.format(patientInfoHtml_ ,xxData.PT_NM._text, xxData.SEX_TP_NM._text, xxData.PT_BRDY_DT._text)
-                  confirm_pno.value = xxData.PT_NO._text
-                  confirm_pname.value = xxData.PT_NM._text
-                  // 확인 버튼 클릭
-                  openConfirmWindow(patientInfoHtml, xxData.PT_NO._text)
-                }
-                else {
-                  openPopupWindow("접수대에 문의하세요.등록번호가 여러개입니다.", "pno_multiple")
-                }
-              }
-              else {
-                openPopupWindow("등록된 정보가 없습니다.", "invalid_number")
-              }
+    const args = {
+      sGubun: 'GETQUERY',
+      sParam: sParam
+    }
+    
+    return new Promise((resolve, reject) => {
+      soap.createClientAsync(service_url).then((client) => {
+        return client.LMServiceAsync(args)
+      }).then((result) => {
+        if (typeof result[0].LMServiceResult !== 'undefined') {
+  
+          const xData = xConvert.xml2js(result[0].LMServiceResult, {compact: true})
+          // console.log('xData', xData)
+          if (typeof xData.NewDataSet.Table !== 'undefined') {
+            
+            // console.log(xData.NewDataSet.Table)
+            const xxData = xData.NewDataSet.Table
+            let itemCount = Array.isArray(xxData) ? xxData.length : 1
+            
+            // 환자번호 갯수 검사
+            if (itemCount == 1) {
+              const patientInfoHtml_ = '이름:%s<br/>성별:%s<br/>생년월일:%s'
+              const patientInfoHtml = util.format(patientInfoHtml_ ,xxData.PT_NM._text, xxData.SEX_TP_NM._text, xxData.PT_BRDY_DT._text)
+              confirm_pno.value = xxData.PT_NO._text
+              confirm_pname.value = xxData.PT_NM._text
+              // 확인 버튼 클릭
+              resolve(xxData)
+              openConfirmWindow(patientInfoHtml, confirm_pno.value)
             }
-          })
-        } else {
-          // console.log('getPatientInfo', 'soap result error : no LMService')
-          openPopupWindow('서버 데이터를 받아올 수 없습니다.<br/> 다시 시도 하십시요.', 'preserv')
+            else {
+              reject(new Error("접수대에 문의하세요. 등록번호가 여러개입니다."))
+              openPopupWindow("접수대에 문의하세요.등록번호가 여러개입니다.", "pno_multiple")
+            }
+          }
+          else {
+            reject(new Error("등록된 정보가 없습니다."))
+            openPopupWindow("등록된 정보가 없습니다.", "invalid_number")
+          }
+  
         }
+      }).catch((err) => {
+        console.log('error:', err)
+      });
+  
+    })
 
-        // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< LMService Result
-        
-      })
-    }
-    else {
-      openPopupWindow('올바른 조회번호를 입력하시요.')      
-    }
   },
   getWaitingNumbers: () => {
     
@@ -516,8 +490,10 @@ module.exports = {
   },
   getReservation: (sNumber) => {
     getReservationInfo(sNumber)
+ 
   },
   getIsHoliday: () => {
+    
     let sQuery = "<?xml version='1.0' encoding='UTF-8'?>"
     + "<Table>"
     + "<QID>"
@@ -539,7 +515,7 @@ module.exports = {
     + "<![CDATA[%s]]>"
     + "</P1>"
     + "</Table>";
-
+    
     let sParam = ""
     let today = dateFormat(new Date(), "isoDate")
     sParam = util.format(sQuery, today)
@@ -549,42 +525,36 @@ module.exports = {
       sParam: sParam
     }
     
-    /*
-    soap.createClientAsync(service_url).then((client) => {
-      return client.LMServiceAsync(args)
-    }).then((result) => {
-      if(typeof result.LMServiceResult !== 'undefined') {
-        const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
-        console.log('xData', xData)
-        if(typeof xData.NewDataSet.Table !== 'undefined') {
-          const xxData = xData.NewDataSet.Table
-          console.log('HDY_YN', HDY_YN)
-        }
-      }
-    }).catch((err) => {
-      console.log('error:', err)
-    });
-    */
     return new Promise((resolve, reject) => {
       soap.createClientAsync(service_url).then((client) => {
+        console.log('getIsHoliday',args)
         return client.LMServiceAsync(args)
       }).then((result) => {
-        if(typeof result.LMServiceResult !== 'undefined') {
-          const xData = xConvert.xml2js(result.LMServiceResult, {compact: true})
-          console.log('xData', xData)
-          if(typeof xData.NewDataSet.Table !== 'undefined') {
-            const xxData = xData.NewDataSet.Table
-            resolve(HDY_YN)
-          }
+        
+        if(typeof result[0].LMServiceResult === 'undefined') {
+          reject(new Error('LMServiceResult undefined'))
         }
+        
+        try {
+          const xData = xConvert.xml2js(result[0].LMServiceResult, {compact: true})
+        } catch (err) {
+          console.log(result[0].LMServiceResult)
+          reject(err)
+        }
+        
+        if(typeof xData.NewDataSet.Table === 'undefined') {
+          reject(new Error(result[0].LMServiceResult))
+        }
+        const xxData = xData.NewDataSet.Table
+        resolve(xxData.HDY_YN)
+
+
       }).catch((err) => {
         console.log('error:', err)
+        reject(err);
       });
-  
-      reject(new Error("Request is failed"));
       
     });
-    
   }
  
 }

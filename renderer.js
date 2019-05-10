@@ -12,11 +12,10 @@ const popup_prevent_input = document.getElementById('popup_prevent_input')
 
 const eumc_soap = require('./modules/eumc/eumc-soap')
 const shutdown = require('electron-shutdown-command');
+const schedule = require('node-schedule')
+const dateFormat = require("dateformat")
 
 let scanPort = 'COM4'
-
-// window.$ = window.jQuery = require('jquery')
-// window.Bootstrap = require('bootstrap')
 
 Array.from(dials).forEach(dial => {
   dial.addEventListener('click', function(event) {
@@ -35,6 +34,46 @@ btnClear.addEventListener('click', function(event) {
   // portSelector.style.display = 'block'
 })
 
+document.addEventListener("DOMContentLoaded", function(){
+  // Handler when the DOM is fully loaded
+  console.log('DOMContentLoaded')
+  // Check holiday and system shut down
+  check_holiday()
+  
+});
+
+async function check_holiday() {
+  try {
+    let isHoliday = await eumc_soap.getIsHoliday()
+    if (isHoliday === 'Y') {
+      shutdown.shutdown()
+    }
+  } catch (err) {
+    console.log('check_holiday ERR:', err)
+  }
+}
+
+// Execute shutdown every 17:30
+/*
+The cron format consists of:
+
+*    *    *    *    *    *
+┬    ┬    ┬    ┬    ┬    ┬
+│    │    │    │    │    │
+│    │    │    │    │    └ day of week (0 - 7) (0 or 7 is Sun)
+│    │    │    │    └───── month (1 - 12)
+│    │    │    └────────── day of month (1 - 31)
+│    │    └─────────────── hour (0 - 23)
+│    └──────────────────── minute (0 - 59)
+└───────────────────────── second (0 - 59, OPTIONAL)
+*/
+
+var j = schedule.scheduleJob('00 30 17 * * *', function(){
+
+  console.log(dateFormat(new Date(), "isoDateTime"),'system shutdown!!!');
+  shutdown.shutdown()
+
+});
 
 /*
 popup.addEventListener('click', function(event) {
@@ -77,7 +116,8 @@ parser.on('data', readScanData)
 function readScanData(data) {
   console.log('data:', "[" + data + "]")
   numInfo.value = data
-  eumc_soap.getReservation(data)
+  eumc_soap_call()
+  // eumc_soap.getReservation(data)
 }
 
 let buffer = null
@@ -85,10 +125,22 @@ let buffer = null
 btnConfirm.addEventListener('click', function(event) {
   // popup.style.display = 'block'
   popup_prevent_input.style.display = 'block'
-  console.log('getPatientInfo by', numInfo.value)
-  eumc_soap.getPatientInfo(numInfo.value)
-  eumc_soap.getWaitingNumbers();
+  eumc_soap_call()
+  // eumc_soap.getPatientInfo(numInfo.value)
+  // eumc_soap.getWaitingNumbers();
 })
+
+async function eumc_soap_call() {
+  try
+  {
+    var pinfo = await eumc_soap.getPatientInfo(numInfo.value)
+    console.log(pinfo)
+  }
+  catch (err)
+  {
+    console.log('eumc_soap_call', err)
+  }
+}
 
 function toHex(str) {
 	var hex = '';
@@ -101,10 +153,3 @@ function toHex(str) {
 const reset_server = require('./modules/rest/app')
 
 // -----------------------------------------------------------------------------------------------
-
-// Check holiday and system shut down
-eumc_soap.getIsHoliday().then((result) => {
-  console.log(result)
-}).catch((err) => {
-  console.log(err)
-})
